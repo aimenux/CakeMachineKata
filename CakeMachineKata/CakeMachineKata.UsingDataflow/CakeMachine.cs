@@ -1,83 +1,110 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using System.Timers;
+using CakeMachineKata.UsingDataflow.Settings;
 
 namespace CakeMachineKata.UsingDataflow
 {
-    public class CakeMachine : ConcurrentBag<Cake>
+    public class CakeMachine
     {
-        private static readonly Random Random = new Random();
-
+        private readonly ConcurrentBag<Cake> _cakes;
+        private readonly ReportingTimer _reportingTimer;
         private readonly DataflowLinkOptions _linkOptions;
         private readonly ExecutionDataflowBlockOptions _prepareOptions;
         private readonly ExecutionDataflowBlockOptions _cookOptions;
         private readonly ExecutionDataflowBlockOptions _packageOptions;
+        private readonly Duration _prepareDuration;
+        private readonly Duration _cookDuration;
+        private readonly Duration _packageDuration;
 
-        public CakeMachine()
+        public CakeMachine(CakeMachineSettings settings)
         {
+            _cakes = new ConcurrentBag<Cake>();
+            var durationSettings = settings.DurationSettings;
+            _prepareDuration = durationSettings.PrepareDuration;
+            _cookDuration = durationSettings.CookDuration;
+            _packageDuration = durationSettings.PackageDuration;
+            var prepareMaxDegree = settings.ParallelismSettings.PrepareMaxDegree;
+            var cookMaxDegree = settings.ParallelismSettings.CookMaxDegree;
+            var packageMaxDegree = settings.ParallelismSettings.PackageMaxDegree;
             _linkOptions = new DataflowLinkOptions { PropagateCompletion = true };
-            _prepareOptions = new ExecutionDataflowBlockOptions { MaxDegreeOfParallelism = 3 };
-            _cookOptions = new ExecutionDataflowBlockOptions { MaxDegreeOfParallelism = 5 };
-            _packageOptions = new ExecutionDataflowBlockOptions { MaxDegreeOfParallelism = 2 };
+            _prepareOptions = new ExecutionDataflowBlockOptions { MaxDegreeOfParallelism = prepareMaxDegree };
+            _cookOptions = new ExecutionDataflowBlockOptions { MaxDegreeOfParallelism = cookMaxDegree };
+            _packageOptions = new ExecutionDataflowBlockOptions { MaxDegreeOfParallelism = packageMaxDegree };
+
+            var reportingSettings = settings.ReportingSettings;
+            if (!(reportingSettings?.IsEnabled ?? false)) return;
+            _reportingTimer = new ReportingTimer(reportingSettings.ReportInterval, OnReportingTimerEvent);
         }
 
         public async Task RunAsync(Stock stock)
         {
+            _reportingTimer?.Start();
+
             var prepareStep = new TransformBlock<Recipe,Cake>(async recipe => await PrepareCakeAsync(recipe), _prepareOptions);
             var cookStep = new TransformBlock<Cake,Cake>(async cake => await CookCakeAsync(cake), _cookOptions);
-            var packageStep = new TransformBlock<Cake,Cake>(async cake => await PackageCakeAsync(cake), _packageOptions);
-            var reportStep = new ActionBlock<Cake>(async cake => await DeliveryCakeAsync(cake));
+            var packageStep = new ActionBlock<Cake>(async cake => await PackageCakeAsync(cake), _packageOptions);
 
             prepareStep.LinkTo(cookStep, _linkOptions);
             cookStep.LinkTo(packageStep, _linkOptions);
-            packageStep.LinkTo(reportStep, _linkOptions);
 
-            foreach (var recipes in stock)
+            while (true)
             {
-                await prepareStep.SendAsync(recipes);
+                var recipe = await stock.GetNextRecipeAsync();
+                if (recipe == null)
+                {
+                    break;
+                }
+
+                await prepareStep.SendAsync(recipe);
             }
-	
+
             prepareStep.Complete();
-            await reportStep.Completion;
+            await packageStep.Completion;
+
+            _reportingTimer?.Stop();
         }
 
         private async Task<Cake> PrepareCakeAsync(Recipe recipe)
         {
             var creationDate = DateTime.Now;
-            var durationInSeconds = Random.Next(5,8);
-            var prepareCakeDuration = 1000 * durationInSeconds;
-            await Task.Delay(prepareCakeDuration);
+            await Task.Delay(_prepareDuration);
             var cake = new Cake(recipe)
             {
                 CreationDate = creationDate
             };
-            Add(cake);
+            _cakes.Add(cake);
             return cake;
         }
 
         private async Task<Cake> CookCakeAsync(Cake cake)
         {
-            const int cookCakeDuration = 10_000;
-            await Task.Delay(cookCakeDuration);
+            await Task.Delay(_cookDuration);
             cake.Status = CakeStatus.Cooked;
             return cake;
         }
 
-        private async Task<Cake> PackageCakeAsync(Cake cake)
+        private async Task PackageCakeAsync(Cake cake)
         {
-            const int packageCakeDuration = 2_000;
-            await Task.Delay(packageCakeDuration);
+            await Task.Delay(_packageDuration);
             cake.Status = CakeStatus.Packaged;
-            return cake;
+            cake.DeliveryDate = DateTime.Now;
         }
 
-        private Task DeliveryCakeAsync(Cake cake)
+        private void OnReportingTimerEvent(object sender, ElapsedEventArgs e)
         {
-            cake.Status = CakeStatus.Delivered;
-            cake.DeliveryDate = DateTime.Now;
-            Console.WriteLine(cake);
-            return Task.CompletedTask;
+            var prepared = _cakes.Count(x => x.Status == CakeStatus.Prepared);
+            var cooked = _cakes.Count(x => x.Status == CakeStatus.Cooked);
+            var packaged = _cakes.Count(x => x.Status == CakeStatus.Packaged);
+            Console.WriteLine($"Total: {_cakes.Count}");
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"- Prepared: {prepared}");
+            Console.WriteLine($"- Cooked: {cooked}");
+            Console.WriteLine($"- Packaged: {packaged}\n");
+            Console.ResetColor();
         }
     }
 }
