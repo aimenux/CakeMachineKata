@@ -5,7 +5,7 @@ Cake Machine (*french description*)
 **Sujet :**
 Vous devez développer un programme (console) en C#, de simulation d’une usine de fabrication de gâteau.
 
-**L'objectif :** pouvoir faire le plus de gâteaux possible (on ne se soucie pas des réserves d'ingrédients, on les considère infinies).
+**L'objectif :** Faire le plus de gâteaux possible (on ne se soucie pas des réserves d'ingrédients, on les considère infinies).
 
 Un gâteau est prêt lorsqu'il a passé les 3 étapes :
 
