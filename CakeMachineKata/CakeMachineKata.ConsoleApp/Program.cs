@@ -25,8 +25,10 @@ namespace CakeMachineKata.ConsoleApp
             stopWatch.Start();
             await cakeMachine.RunAsync(stock);
             stopWatch.Stop();
+
+            Console.WriteLine($"Initial stock: {total} - Final stock: {stock.Size}");
             Console.WriteLine($"Elapsed time: {stopWatch.Elapsed}");
-            Console.WriteLine("Press any key to exit ..");
+            Console.WriteLine("\nPress any key to exit ..");
             Console.ReadKey();
         }
     }

@@ -8,6 +8,8 @@ namespace CakeMachineKata.UsingDataflow
     {
         private readonly ConcurrentQueue<Recipe> _recipes;
 
+        public int Size => _recipes?.Count ?? 0;
+
         public Duration DurationForNextRecipe { get; set; } = GetDurationForNextRecipe();
 
         public Stock(int total)

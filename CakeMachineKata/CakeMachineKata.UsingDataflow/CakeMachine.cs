@@ -63,9 +63,11 @@ namespace CakeMachineKata.UsingDataflow
             }
 
             prepareStep.Complete();
+            await prepareStep.Completion;
+            await cookStep.Completion;
             await packageStep.Completion;
 
-            _reportingTimer?.Stop();
+             _reportingTimer?.Stop();
         }
 
         private async Task<Cake> PrepareCakeAsync(Recipe recipe)
