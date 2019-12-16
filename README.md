@@ -17,7 +17,7 @@ Modalités de production :
 1. Je peux préparer 3 gâteaux en même temps 
 2. Je peux cuire 5 gâteaux en même temps 
 3. Je peux emballer 2 gâteaux en même temps 
-4.Toutes les minutes, un relevé affiche le nombre de gâteaux terminés ainsi que le nombre de gâteaux à chaque étape de la confection.
+4. Toutes les minutes, un relevé affiche le nombre de gâteaux terminés ainsi que le nombre de gâteaux à chaque étape de la confection.
 	
 Attendu :
 
