@@ -1,11 +1,11 @@
 # CakeMachineKata
 
-Cake Machine (French description)
+Cake Machine (*french description*)
 
-Sujet :
+**Sujet :**
 Vous devez développer un programme (console) en C#, de simulation d’une usine de fabrication de gâteau.
 
-L'objectif : pouvoir faire le plus de gâteaux possible (on ne se soucie pas des réserves d'ingrédients, on les considère infinies).
+**L'objectif :** pouvoir faire le plus de gâteaux possible (on ne se soucie pas des réserves d'ingrédients, on les considère infinies).
 
 Un gâteau est prêt lorsqu'il a passé les 3 étapes :
 
@@ -19,7 +19,7 @@ Modalités de production :
 3. Je peux emballer 2 gâteaux en même temps 
 4. Toutes les minutes, un relevé affiche le nombre de gâteaux terminés ainsi que le nombre de gâteaux à chaque étape de la confection.
 	
-Attendu :
+**Attendu :**
 
 - Pas de limite ou contrainte dans l'utilisation de librairies ou package. 
 - Ecrire un code sans bug, attention aux fuites mémoire. Tout sera lu et observé. 
