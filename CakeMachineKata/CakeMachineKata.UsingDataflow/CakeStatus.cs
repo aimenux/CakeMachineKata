@@ -5,6 +5,7 @@
         None,
         Prepared,
         Cooked,
-        Packaged
+        Packaged,
+        Delivered
     }
 }

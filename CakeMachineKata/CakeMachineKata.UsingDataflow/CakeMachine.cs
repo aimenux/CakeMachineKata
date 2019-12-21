@@ -19,6 +19,7 @@ namespace CakeMachineKata.UsingDataflow
         private readonly Duration _prepareDuration;
         private readonly Duration _cookDuration;
         private readonly Duration _packageDuration;
+        private readonly Duration _deliveryDuration;
 
         public CakeMachine(CakeMachineSettings settings)
         {
@@ -27,6 +28,7 @@ namespace CakeMachineKata.UsingDataflow
             _prepareDuration = durationSettings.PrepareDuration;
             _cookDuration = durationSettings.CookDuration;
             _packageDuration = durationSettings.PackageDuration;
+            _deliveryDuration = durationSettings.DeliveryDuration;
             var prepareMaxDegree = settings.ParallelismSettings.PrepareMaxDegree;
             var cookMaxDegree = settings.ParallelismSettings.CookMaxDegree;
             var packageMaxDegree = settings.ParallelismSettings.PackageMaxDegree;
@@ -46,10 +48,12 @@ namespace CakeMachineKata.UsingDataflow
 
             var prepareStep = new TransformBlock<Recipe,Cake>(async recipe => await PrepareCakeAsync(recipe), _prepareOptions);
             var cookStep = new TransformBlock<Cake,Cake>(async cake => await CookCakeAsync(cake), _cookOptions);
-            var packageStep = new ActionBlock<Cake>(async cake => await PackageCakeAsync(cake), _packageOptions);
+            var packageStep = new TransformBlock<Cake,Cake>(async cake => await PackageCakeAsync(cake), _packageOptions);
+            var deliveryStep = new ActionBlock<Cake>(async cake => await DeliveryCakeAsync(cake));
 
             prepareStep.LinkTo(cookStep, _linkOptions);
             cookStep.LinkTo(packageStep, _linkOptions);
+            packageStep.LinkTo(deliveryStep, _linkOptions);
 
             while (true)
             {
@@ -89,10 +93,17 @@ namespace CakeMachineKata.UsingDataflow
             return cake;
         }
 
-        private async Task PackageCakeAsync(Cake cake)
+        private async Task<Cake> PackageCakeAsync(Cake cake)
         {
             await Task.Delay(_packageDuration);
             cake.Status = CakeStatus.Packaged;
+            return cake;
+        }
+
+        private async Task DeliveryCakeAsync(Cake cake)
+        {
+            await Task.Delay(_deliveryDuration);
+            cake.Status = CakeStatus.Delivered;
             cake.DeliveryDate = DateTime.Now;
         }
 
@@ -101,7 +112,9 @@ namespace CakeMachineKata.UsingDataflow
             var prepared = _cakes.Count(x => x.Status == CakeStatus.Prepared);
             var cooked = _cakes.Count(x => x.Status == CakeStatus.Cooked);
             var packaged = _cakes.Count(x => x.Status == CakeStatus.Packaged);
-            Console.WriteLine($"Total: {_cakes.Count}");
+            var delivered = _cakes.Count(x => x.Status == CakeStatus.Delivered);
+            Console.WriteLine($"Current cake machine status at: {DateTime.Now}");
+            Console.WriteLine($"Total finished cakes: {delivered}");
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine($"- Prepared: {prepared}");
             Console.WriteLine($"- Cooked: {cooked}");
