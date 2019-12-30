@@ -24,3 +24,5 @@ Modalités de production :
 - Pas de limite ou contrainte dans l'utilisation de librairies ou package. 
 - Ecrire un code sans bug, attention aux fuites mémoire. Tout sera lu et observé. 
 - Attention donc également au nommage, à la qualité du code produit.
+
+**`Tools`** : `vs19, net core 3.1, tpl dataflow`
